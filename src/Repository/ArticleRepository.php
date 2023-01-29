@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Article;
+use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -39,29 +40,21 @@ class ArticleRepository extends ServiceEntityRepository
         }
     }
 
-    /**
-     * @return Article[] Returns an array of Article objects
-     */
-    public function findByStatus(bool $value): array
+    public function findByDate(?DateTime $date, ?int $offset, ?int $limit): array
     {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.status = :val')
-            ->setParameter('val', $value)
-            ->orderBy('a.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getArrayResult();
-    }
+        $query = $this->createQueryBuilder('a');
+        if ($date) {
+            $query->andWhere('a.created_at >= :fromDate')
+                ->andWhere('a.created_at <= :toDate')
+                ->setParameter('fromDate', $date->modify('-1 day')->format('Y-m-d H:i:s'))
+                ->setParameter('toDate', $date->modify('+2 day')->modify('-1 second')->format('Y-m-d H:i:s'));
+        }
 
-    /**
-     * @return Article[] Returns an array of Article objects
-     */
-    public function findByDate($value): array
-    {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
+        return $query->andWhere('a.status = \'t\'')
+            ->orderBy('a.created_at', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getResult();
     }
 }

@@ -7,6 +7,8 @@ use DateTime;
 use DateTimeInterface;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -17,15 +19,17 @@ class Article
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[NotBlank,Length(min: 1,max: 255)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[NotBlank,Length(min: 1)]
     private ?string $content = null;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => 0])]
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => 0])]
     private ?bool $status = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, options: ['default' => 'now()'])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['default' => 'now()'])]
     private ?DateTimeInterface $created_at = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
@@ -34,6 +38,7 @@ class Article
     public function __construct()
     {
         $this->setCreatedAt(new DateTime());
+        $this->setStatus(false);
     }
 
     public function getId(): ?int
@@ -65,15 +70,18 @@ class Article
         return $this;
     }
 
-    public function isStatus(): ?bool
+    public function isStatus(): string
     {
-        return $this->status;
+        if($this->status) {
+            return 'active';
+        }
+
+        return 'inactive';
     }
 
     public function setStatus(bool $status): self
     {
-        $this->status = (int)$status;
-
+        $this->status = $status;
         if($status){
             $this->setPostedAt(new DateTime());
         }
